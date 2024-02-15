@@ -1,0 +1,25 @@
+=== Null Counts ===
+
+6364 rows
+
+id_site: 0
+code_module: 0
+code_presentation: 0
+activity_type: 0
+week_from: 5243
+week_to: 5243
+
+=== Unique ===
+
+id_site is unique in each row
+
+code_module (7 unique rows): AAA, BBB, CCC, DDD, EEE, FFF, GGG
+
+code_presentation (4 unique rows): 2013J, 2014J, 2013B, 2014B
+
+activity_type (20 unique rows): resource, oucontent, url, homepage, subpage, glossary, forumng, oucollaborate, dataplus, quiz, ouelluminate, sharedsubpage, questionnaire, page, externalquiz, ouwiki, dualpane, repeatactivity, folder, htmlactivity
+
+week_from (31 unique rows): nan, 2.0, 1.0, 9.0, 11.0, 22.0, 6.0, 8.0, 19.0, 4.0, 15.0, 14.0, 25.0, 20.0, 27.0, 16.0, 24.0, 3.0, 21.0, 18.0, 26.0, 10.0, 5.0, 28.0, 23.0, 13.0, 12.0, 7.0, 17.0, 0.0, 29.0
+
+week_to (31 unique rows): nan, 2.0, 1.0, 9.0, 11.0, 22.0, 6.0, 8.0, 19.0, 4.0, 15.0, 14.0, 25.0, 20.0, 27.0, 16.0, 24.0, 3.0, 21.0, 18.0, 26.0, 10.0, 5.0, 28.0, 23.0, 13.0, 12.0, 7.0, 17.0, 0.0, 29.0
+

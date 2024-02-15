@@ -1,0 +1,16 @@
+=== Null Counts ===
+
+22 rows
+
+code_module: 0
+code_presentation: 0
+module_presentation_length: 0
+
+=== Unique ===
+
+code_module (7 unique rows): AAA, BBB, CCC, DDD, EEE, FFF, GGG
+
+code_presentation (4 unique rows): 2013J, 2014J, 2013B, 2014B
+
+module_presentation_length (7 unique rows): 268, 269, 262, 240, 234, 241, 261
+

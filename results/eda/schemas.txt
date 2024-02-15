@@ -1,0 +1,59 @@
+=== Schemas ===
+
+Table: courses
+	code_module [object]
+	code_presentation [object]
+	module_presentation_length [int64]
+
+Table: studentVle
+	code_module [object]
+	code_presentation [object]
+	id_student [int64]
+	id_site [int64]
+	date [int64]
+	sum_click [int64]
+
+Table: vle
+	id_site [int64]
+	code_module [object]
+	code_presentation [object]
+	activity_type [object]
+	week_from [float64]
+	week_to [float64]
+
+Table: studentInfo
+	code_module [object]
+	code_presentation [object]
+	id_student [int64]
+	gender [object]
+	region [object]
+	highest_education [object]
+	imd_band [object]
+	age_band [object]
+	num_of_prev_attempts [int64]
+	studied_credits [int64]
+	disability [object]
+	final_result [object]
+
+Table: studentAssessment
+	id_assessment [int64]
+	id_student [int64]
+	date_submitted [int64]
+	is_banked [int64]
+	score [float64]
+
+Table: studentRegistration
+	code_module [object]
+	code_presentation [object]
+	id_student [int64]
+	date_registration [float64]
+	date_unregistration [float64]
+
+Table: assessments
+	code_module [object]
+	code_presentation [object]
+	id_assessment [int64]
+	assessment_type [object]
+	date [float64]
+	weight [float64]
+
