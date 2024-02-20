@@ -146,7 +146,7 @@ def top_level_analysis():
     student_assessment_and_assessment_info = pd.merge(
         student_assessment, assessment, how="inner", on="id_assessment"
     )
-    student_assessment_and_assessment_info["perc_till_deadline"] = (
+    student_assessment_and_assessment_info["perc_till_deadline"] = 100.0 * (
         student_assessment_and_assessment_info["date_submitted"]
         / student_assessment_and_assessment_info["date"]
     )
@@ -163,6 +163,7 @@ def top_level_analysis():
     )
     plt.xlabel("Percent Till Deadline")
     plt.ylabel("Score")
+    plt.axvline(100.0, linestyle='--', color='black')
     plt.title("Student Scores Compared with\nRelative Submission Time")
     plt.savefig(
         os.path.join(PLOTS_FOLDER, "student_perc_till_deadline_and_performance.png")
@@ -253,7 +254,6 @@ def lower_level_analysis():
     )
     plt.clf()
 
-    # Joins all student scores with the region information
     student_scores_and_ages = student_scores_and_info[["age_band", "score"]]
 
     # Consolidate regional score into mean
@@ -280,7 +280,7 @@ def lower_level_analysis():
 
     # leaving this code here.. but plot not too useful
 
-    student_exam_assessment["perc_till_deadline"] = (
+    student_exam_assessment["perc_till_deadline"] = 100.0 * (
         student_exam_assessment["date_submitted"] / student_exam_assessment["date"]
     )
 
@@ -294,6 +294,7 @@ def lower_level_analysis():
         student_exam_assessment["perc_till_deadline"].to_numpy(),
         student_exam_assessment["score"].to_numpy(),
     )
+    plt.axvline(100.0, linestyle="--")
     plt.xlabel("Percent Till Deadline")
     plt.ylabel("Score")
     plt.savefig(
