@@ -179,6 +179,8 @@ def lower_level_analysis():
     student_assessment = student_assessment[~student_assessment["score"].isnull()]
 
     assessment = data.load_df("assessments")
+
+    # Filter exam assessments only
     student_exam_assessment = pd.merge(
         student_assessment,
         assessment[assessment["assessment_type"] == "Exam"],
@@ -219,7 +221,7 @@ def lower_level_analysis():
     plt.savefig(os.path.join(PLOTS_FOLDER, "student_exam_scores_and_learning.png"))
     plt.clf()
 
-    # Joins all student scores with the region information
+    # Join student information with exams
     student_scores_and_info = pd.merge(
         student_exam_assessment, student_info, how="inner", on="id_student"
     )
