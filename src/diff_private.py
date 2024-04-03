@@ -11,6 +11,32 @@ PLOTS_FOLDER = os.path.join("..", "results", "scores-diff-private")
 def get_added_laplace_noise(global_sensitivty, epsilon):
     return np.random.laplace(scale=global_sensitivty / epsilon)
 
+# `get_dp_mean`
+# 
+# Within data frame `df`, takes the lists of values within `df[src_key]`, 
+# and stores differentially private means of those lists within `df[dest_key]`.
+# Also stores error/variance within `df[error_key]` based on global sensitivity 
+# and epsilon.
+# 
+# Uses inputted `epsilon` for the epsilon value.
+# 
+# `global_sensitivity_func` is a function that takes in an arbitrary list 
+# that is an element of `df[src_key]` and returns the global sensitivity
+# Example global_sensitivity_func: lambda x : 100 / len(x)
+#
+# Side effects:
+#  Stores intermediate results in `df["gs"]` and `df["noise"]`
+def get_dp_mean(df, global_sensitivity_func, epsilon, src_key, dest_key="mean", error_key="error"):
+    df[dest_key] = df[src_key].apply(np.mean)
+    print(f"Min: {df[dest_key].min()}; Max: {df[dest_key].max()}; Mean: {df[dest_key].mean()}")
+    df["gs"] = df[src_key].apply(global_sensitivity_func)
+    df["noise"] = df["gs"].apply(
+        lambda x: get_added_laplace_noise(x, epsilon)
+    )
+    df[dest_key] += df["noise"]
+    print(f"Min: {df[dest_key].min()}; Max: {df[dest_key].max()}; Mean: {df[dest_key].mean()}")
+
+    df[error_key] = df["gs"].apply(lambda x: (2 * (x / epsilon)) ** 2)
 
 # TODO add timing
 
@@ -28,16 +54,9 @@ def student_scores_vs_learning(epsilon):
     )
 
     # Mean and std of performance
-    consistency["mean"] = consistency["score"].apply(np.mean)
-    consistency["gs"] = consistency["score"].apply(lambda x: 100 / len(x))
-    consistency["noise"] = consistency["gs"].apply(
-        lambda x: get_added_laplace_noise(x, epsilon)
-    )
-    consistency["mean"] += consistency["noise"]
+    get_dp_mean(consistency, lambda x : 100 / len(x), epsilon, src_key="score")
+    # force within range 0-100
     consistency["mean"] = consistency["mean"].clip(lower=0, upper=100)
-
-    # Compute amount of error
-    consistency["error"] = consistency["gs"].apply(lambda x: (2 * (x / epsilon)) ** 2)
 
     # Calculates total VLE usage by summing "sum_click"
     student_total_vle_usage = (
@@ -95,20 +114,11 @@ def age_exam_performance(epsilon):
     )
 
     # Mean and std of performance
-    age_performance["mean"] = age_performance["score"].apply(np.mean)
+    get_dp_mean(age_performance, lambda x : 100 / len(x), epsilon, src_key="score")
     age_performance["std"] = age_performance["score"].apply(np.std)
-    # print(age_performance["mean"].min(), age_performance["mean"].max())
-    age_performance["gs"] = age_performance["score"].apply(lambda x: 100 / len(x))
-    age_performance["noise"] = age_performance["gs"].apply(
-        lambda x: get_added_laplace_noise(x, epsilon)
-    )
-    age_performance["mean"] += age_performance["noise"]
-    # print(age_performance["mean"].min(), age_performance["mean"].max())
+
+    # force mean to be within range 0-100
     age_performance["mean"] = age_performance["mean"].clip(lower=0, upper=100)
-    age_performance["error"] = age_performance["gs"].apply(
-        lambda x: (2 * (x / epsilon)) ** 2
-    )
-    # print(age_performance)
 
     # Plot it
     x = age_performance.index.to_list()
@@ -153,18 +163,10 @@ def region_exam_performance(epsilon):
         student_scores_and_regions.groupby("region")["score"].apply(list).to_frame()
     )
 
-    region_performance["mean"] = region_performance["score"].apply(np.mean)
-    print(region_performance["mean"].min(), region_performance["mean"].max())
-    region_performance["gs"] = region_performance["score"].apply(lambda x: 100 / len(x))
-    region_performance["noise"] = region_performance["gs"].apply(
-        lambda x: get_added_laplace_noise(x, epsilon)
-    )
-    region_performance["mean"] += region_performance["noise"]
-    print(region_performance["mean"].min(), region_performance["mean"].max())
+    get_dp_mean(region_performance, lambda x : 100 / len(x), epsilon, src_key="score")
+
+    # force mean to be between 0-100
     region_performance["mean"] = region_performance["mean"].clip(lower=0, upper=100)
-    region_performance["error"] = region_performance["gs"].apply(
-        lambda x: (2 * (x / epsilon)) ** 2
-    )
 
     region_performance["std"] = region_performance["score"].apply(np.std)
 
