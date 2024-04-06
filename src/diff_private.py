@@ -11,37 +11,53 @@ PLOTS_FOLDER = os.path.join("..", "results", "scores-diff-private")
 def get_added_laplace_noise(global_sensitivty, epsilon):
     return np.random.laplace(scale=global_sensitivty / epsilon)
 
+
 # `get_dp_mean`
-# 
-# Within data frame `df`, takes the lists of values within `df[src_key]`, 
+#
+# Within data frame `df`, takes the lists of values within `df[src_key]`,
 # and stores differentially private means of those lists within `df[dest_key]`.
-# Also stores error/variance within `df[error_key]` based on global sensitivity 
+# Also stores error/variance within `df[error_key]` based on global sensitivity
 # and epsilon.
-# 
+#
 # Uses inputted `epsilon` for the epsilon value.
-# 
-# `global_sensitivity_func` is a function that takes in an arbitrary list 
+#
+# `global_sensitivity_func` is a function that takes in an arbitrary list
 # that is an element of `df[src_key]` and returns the global sensitivity
 # Example global_sensitivity_func: lambda x : 100 / len(x)
 #
 # Side effects:
 #  Stores intermediate results in `df["gs"]` and `df["noise"]`
-def get_dp_mean(df, global_sensitivity_func, epsilon, src_key, dest_key="mean", error_key="error"):
+def get_dp_mean(
+    df,
+    global_sensitivity_func,
+    epsilon,
+    src_key,
+    dest_key="mean",
+    error_key="error",
+    debug=False,
+):
     df[dest_key] = df[src_key].apply(np.mean)
-    print(f"Min: {df[dest_key].min()}; Max: {df[dest_key].max()}; Mean: {df[dest_key].mean()}")
+    if debug:
+        print(
+            f"Min: {df[dest_key].min()}; Max: {df[dest_key].max()}; Mean: {df[dest_key].mean()}"
+        )
     df["gs"] = df[src_key].apply(global_sensitivity_func)
-    df["noise"] = df["gs"].apply(
-        lambda x: get_added_laplace_noise(x, epsilon)
-    )
+    df["noise"] = df["gs"].apply(lambda x: get_added_laplace_noise(x, epsilon))
     df[dest_key] += df["noise"]
-    print(f"Min: {df[dest_key].min()}; Max: {df[dest_key].max()}; Mean: {df[dest_key].mean()}")
+    if debug:
+        print(
+            f"Min: {df[dest_key].min()}; Max: {df[dest_key].max()}; Mean: {df[dest_key].mean()}"
+        )
 
     df[error_key] = df["gs"].apply(lambda x: (2 * (x / epsilon)) ** 2)
+
 
 # TODO add timing
 
 
 def student_scores_vs_learning(epsilon):
+    ti = time.time()
+
     student_assessment = data.load_df("studentAssessment")
     student_vle = data.load_df("studentVle")
 
@@ -53,10 +69,15 @@ def student_scores_vs_learning(epsilon):
         student_assessment.groupby("id_student")["score"].apply(list).to_frame()
     )
 
+    # schema will be student_assessment's schema
+    # SELECT id_student, AVG(score) FROM student_assessment GROUP BY id_student
+
     # Mean and std of performance
-    get_dp_mean(consistency, lambda x : 100 / len(x), epsilon, src_key="score")
+    get_dp_mean(consistency, lambda x: 100 / len(x), epsilon, src_key="score")
     # force within range 0-100
     consistency["mean"] = consistency["mean"].clip(lower=0, upper=100)
+
+    tf = time.time()
 
     # Calculates total VLE usage by summing "sum_click"
     student_total_vle_usage = (
@@ -82,10 +103,12 @@ def student_scores_vs_learning(epsilon):
     plt.savefig(os.path.join(PLOTS_FOLDER, "student_scores_and_learning.png"))
     plt.clf()
 
-    return consistency["error"].mean(), 0
+    return consistency["error"].mean(), tf - ti
 
 
 def age_exam_performance(epsilon):
+    ti = time.time()
+
     student_assessment = data.load_df("studentAssessment")
     student_info = data.load_df("studentInfo")
 
@@ -113,30 +136,34 @@ def age_exam_performance(epsilon):
         student_scores_and_ages.groupby("age_band")["score"].apply(list).to_frame()
     )
 
+    # schema will be age_band and score
+    # SELECT age_band, AVG(score) FROM student_scores_and_ages GROUP BY age_band
+
     # Mean and std of performance
-    get_dp_mean(age_performance, lambda x : 100 / len(x), epsilon, src_key="score")
-    age_performance["std"] = age_performance["score"].apply(np.std)
+    get_dp_mean(age_performance, lambda x: 100 / len(x), epsilon, src_key="score")
 
     # force mean to be within range 0-100
     age_performance["mean"] = age_performance["mean"].clip(lower=0, upper=100)
 
+    tf = time.time()
+
     # Plot it
     x = age_performance.index.to_list()
     height = age_performance["mean"].to_numpy()
-    error = age_performance["std"].to_numpy()
 
     plt.bar(x, height)
-    plt.errorbar(x, y=height, yerr=error, linestyle="none", capsize=5, color="black")
     plt.xlabel("Age Group")
     plt.ylabel("Mean Score")
     plt.title("Performance of Different Age Groups\nAcross all Exams")
     plt.savefig(os.path.join(PLOTS_FOLDER, "age_exam_performance.png"))
     plt.clf()
 
-    return age_performance["error"].mean(), 0
+    return age_performance["error"].mean(), tf - ti
 
 
 def region_exam_performance(epsilon):
+    ti = time.time()
+
     student_assessment = data.load_df("studentAssessment")
     student_info = data.load_df("studentInfo")
 
@@ -163,24 +190,22 @@ def region_exam_performance(epsilon):
         student_scores_and_regions.groupby("region")["score"].apply(list).to_frame()
     )
 
-    get_dp_mean(region_performance, lambda x : 100 / len(x), epsilon, src_key="score")
+    # schema will be region and score
+    # SELECT region, AVG(score) FROM student_scores_and_regions GROUP BY region
+    get_dp_mean(region_performance, lambda x: 100 / len(x), epsilon, src_key="score")
 
     # force mean to be between 0-100
     region_performance["mean"] = region_performance["mean"].clip(lower=0, upper=100)
 
-    region_performance["std"] = region_performance["score"].apply(np.std)
+    tf = time.time()
 
     # Plot -- I strip the region names to 4 letters until we fix the rotation
     # issues of getting the full region names to fit
     x = region_performance.index.to_list()
     x = [e.replace(" Region", "") for e in x]
     height = region_performance["mean"].to_numpy()
-    error = region_performance["std"].to_numpy()
     xticks = np.arange(len(x))
     plt.bar(xticks, height)
-    plt.errorbar(
-        xticks, y=height, yerr=error, linestyle="none", capsize=5, color="black"
-    )
 
     plt.xticks(xticks, x, rotation=45, horizontalalignment="right")
     plt.xlabel("Region")
@@ -191,93 +216,216 @@ def region_exam_performance(epsilon):
     )
     plt.clf()
 
-    return region_performance["error"].mean(), 0
+    return region_performance["error"].mean(), tf - ti
 
 
 def region_learning(epsilon):
+    ti = time.time()
+
     student_vle = data.load_df("studentVle")
     student_info = data.load_df("studentInfo")
+
+    # Collapse table such that every id_student is unique
+    student_vle["student_sum_click"] = student_vle.groupby("id_student")[
+        "sum_click"
+    ].transform("sum")
+    student_vle.drop_duplicates(subset=["id_student"], inplace=True)
+    student_vle.drop(columns=["sum_click"], inplace=True)
 
     # Join student learning and info
     student_regions_and_learning = pd.merge(
         student_info[["id_student", "region"]],
-        student_vle[["id_student", "sum_click"]],
+        student_vle[["id_student", "student_sum_click"]],
         how="inner",
         on="id_student",
     )
 
-    # Collects total clicks per region
-    region_size = (
-        student_info.groupby("region")["id_student"].nunique().to_frame().reset_index()
-    )
+    maxval = student_regions_and_learning["student_sum_click"].max()
 
-    region_learning = (
-        student_regions_and_learning.groupby("region")["sum_click"]
-        .sum()
+    student_regions_and_learning_grouped = (
+        student_regions_and_learning.groupby("region")["student_sum_click"]
+        .apply(list)
         .to_frame()
-        .reset_index()
-    )
-    region_learning = region_learning.rename(columns={"sum_click": "sum"})
-    print(region_learning["sum"].min(), region_learning["sum"].max())
-
-    region_learning_variance = (
-        student_regions_and_learning.groupby("region")["sum_click"]
-        .max()
-        .to_frame()
-        .reset_index()
-    )
-    region_learning_variance = region_learning_variance.rename(
-        columns={"sum_click": "gs"}
     )
 
-    region_learning = pd.merge(
-        region_learning, region_learning_variance, how="inner", on="region"
+    get_dp_mean(
+        student_regions_and_learning_grouped,
+        lambda x: maxval / len(x),
+        epsilon,
+        src_key="student_sum_click",
     )
 
-    region_learning["noise"] = region_learning["gs"].apply(
-        lambda x: get_added_laplace_noise(x, epsilon)
-    )
+    tf = time.time()
 
-    region_learning["sum"] += region_learning["noise"]
-    print(region_learning["sum"].min(), region_learning["sum"].max())
-    region_learning["sum"] = region_learning["sum"].clip(lower=0)
-    region_learning["error"] = region_learning["gs"].apply(
-        lambda x: (2 * (x / epsilon)) ** 2
-    )
+    # schema: id_student region sum_click
+    # SELECT region, SUM(sum_click) / COUNT(DISTINCT id_student) FROM student_regions_and_learning GROUP BY region
 
-    # TODO fix this plotting based on indices
     # Plot it
-    # region_learning_idx = region_learning["region"].to_list()
-    # height = [region_learning[k] / region_size[k] for k in region_learning_idx]
-    # region_learning_idx = [e.replace(" Region", "") for e in region_learning_idx]
-    # xticks = np.arange(len(region_learning_idx))
-    # plt.bar(xticks, height)
-    # plt.xlabel("Region")
-    # plt.ylabel("Interactions Per Person")
-    # plt.xticks(xticks, region_learning_idx, rotation=45, horizontalalignment="right")
-    # plt.title("Virtual Learning Engagement\nAcross Regions")
-    # plt.savefig(os.path.join(PLOTS_FOLDER, "region_learning.png"), bbox_inches="tight")
-    # plt.clf()
+    x = student_regions_and_learning_grouped.index.to_list()
+    x = [e.replace(" Region", "") for e in x]
+    height = student_regions_and_learning_grouped["mean"].to_numpy()
+    xticks = np.arange(len(x))
+    plt.bar(xticks, height)
 
-    return region_learning["error"].mean(), 0
+    plt.xticks(xticks, x, rotation=45, horizontalalignment="right")
+    plt.xlabel("Region")
+    plt.ylabel("Interactions Per Person")
+    plt.title("Virtual Learning Environment\nAcross Regions")
+    plt.savefig(os.path.join(PLOTS_FOLDER, "region_learning.png"), bbox_inches="tight")
+    plt.clf()
+
+    return student_regions_and_learning_grouped["error"].mean(), tf - ti
+
+
+# SELECT pct_till_deadline_band, AVG(score) FROM df GROUP BY pct_till_deadline_band
+
+
+def perc_till_deadline(epsilon):
+    ti = time.time()
+
+    student_assessment = data.load_df("studentAssessment")
+
+    student_assessment = student_assessment[~student_assessment["score"].isnull()]
+
+    assessment = data.load_df("assessments")
+    assessment = assessment[~assessment["date"].isnull()]
+
+    student_assessment_and_assessment_info = pd.merge(
+        student_assessment, assessment, how="inner", on="id_assessment"
+    )
+
+    student_assessment_and_assessment_info["perc_till_deadline"] = 100.0 * (
+        student_assessment_and_assessment_info["date_submitted"]
+        / student_assessment_and_assessment_info["date"]
+    )
+
+    # drop rows where assessments were submitted before the semester (or module) started
+    # could come back to this.. we didn't make sense of it..
+    student_assessment_and_assessment_info = student_assessment_and_assessment_info[
+        student_assessment_and_assessment_info["date_submitted"] >= 0
+    ]
+
+    student_assessment_and_assessment_info = student_assessment_and_assessment_info[
+        ["score", "perc_till_deadline"]
+    ]
+
+    # defines index of a particular bin `i` 0 <= i <= 10 such that...
+    # if 0 <= i < 10, bin i refers to the interval: [10 * i, 10 * i + 10)
+    # if i = 10, bin i refers to the interval: [100, \infty)
+    student_assessment_and_assessment_info["bin"] = (
+        student_assessment_and_assessment_info["perc_till_deadline"].apply(
+            lambda x: min(int(x // 10), 10)
+        )
+    )
+
+    student_assessment_and_assessment_info_grouped = (
+        student_assessment_and_assessment_info.groupby("bin")["score"]
+        .apply(list)
+        .to_frame()
+    )
+
+    get_dp_mean(
+        student_assessment_and_assessment_info_grouped,
+        lambda x: 100 / len(x),
+        epsilon,
+        src_key="score",
+    )
+
+    tf = time.time()
+
+    # Plot it
+    x = student_assessment_and_assessment_info_grouped.index.to_list()
+    height = student_assessment_and_assessment_info_grouped["mean"].to_numpy()
+
+    plt.bar(x, height)
+    plt.xticks(
+        x,
+        map(lambda e: f"[{10*e},{10*e+10})" if e < 10 else "$\geq 100$", x),
+        rotation=45,
+        horizontalalignment="right",
+    )
+    plt.xlabel("Bin")
+    plt.ylabel("Mean Score")
+    plt.title("Assessment Performance at\nDifferent Deadlines")
+    plt.savefig(
+        os.path.join(PLOTS_FOLDER, "perc_till_deadline.png"), bbox_inches="tight"
+    )
+    plt.clf()
+
+    return student_assessment_and_assessment_info_grouped["error"].mean(), tf - ti
+
+
+# `plot_err_runtime`
+#
+# Given
+def plot_err_runtime(query_func, epsilons, query_name):
+    NUM_TRIALS = 10
+    errors = np.zeros((len(epsilons), NUM_TRIALS))
+    runtimes = np.zeros((len(epsilons), NUM_TRIALS))
+    for idx, ep in enumerate(epsilons):
+        for i in range(NUM_TRIALS):
+            err, runtime = query_func(epsilon=ep)
+            errors[idx][i] = err
+            runtimes[idx][i] = runtime
+
+    mean_errors = np.mean(errors, axis=1)
+    std_errors = np.std(errors, axis=1)
+    mean_runtimes = np.mean(runtimes, axis=1)
+    std_runtimes = np.std(runtimes, axis=1)
+
+    # Plot: Error vs. Epsilon
+    plt.plot(epsilons, mean_errors)
+    plt.errorbar(
+        epsilons,
+        y=mean_errors,
+        yerr=std_errors,
+        linestyle="none",
+        capsize=5,
+        color="black",
+    )
+    plt.title(f"Average Error by Epsilon Value \nfor Query {query_name}")
+    plt.xlabel("Epsilon")
+    plt.ylabel("Average Error Amount")
+    plt.savefig(os.path.join(PLOTS_FOLDER, f"{query_func.__name__}_error.png"))
+    plt.clf()
+
+    # Plot: Runtime vs. Epsilon
+    plt.plot(epsilons, mean_runtimes)
+    plt.errorbar(
+        epsilons,
+        y=mean_runtimes,
+        yerr=std_runtimes,
+        linestyle="none",
+        capsize=5,
+        color="black",
+    )
+    plt.title(f"Average Runtime by Epsilon Value \nfor Query {query_name}")
+    plt.xlabel("Epsilon")
+    plt.ylabel("Average Runtime")
+    plt.savefig(os.path.join(PLOTS_FOLDER, f"{query_func.__name__}_runtime.png"))
+    plt.clf()
 
 
 def main():
-    # for ep in [5, 50]:
-    #     err, runtime = student_scores_vs_learning(epsilon=ep)
-    #     print(err)
-
-    # for ep in [5, 0.5]:
-    #     err, runtime = age_exam_performance(epsilon=ep)
-    #     print(err)
-
-    # for ep in [0.5, 0.2]:
-    #     err, runtime = region_exam_performance(epsilon=ep)
-    #     print(err)
-
-    for ep in [500]:
-        err, runtime = region_learning(epsilon=ep)
-        print(err)
+    plot_err_runtime(
+        student_scores_vs_learning, [10, 20, 30, 40, 50], "Student Score vs. Learning"
+    )
+    # plot_err_runtime(
+    #     age_exam_performance,
+    #     [5, 50],
+    # )
+    # plot_err_runtime(
+    #     region_exam_performance,
+    #     [5, 50],
+    # )
+    # plot_err_runtime(
+    #     region_learning,
+    #     [5, 50],
+    # )
+    # plot_err_runtime(
+    #     perc_till_deadline,
+    #     [5, 50],
+    # )
 
 
 if __name__ == "__main__":
