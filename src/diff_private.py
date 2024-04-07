@@ -4,8 +4,25 @@ import numpy as np
 import data
 import os
 import time
+from datetime import datetime
+import pytz
 
 PLOTS_FOLDER = os.path.join("..", "results", "scores-diff-private")
+
+
+def curr_time(prefix):
+    print(
+        prefix + datetime.now(pytz.timezone("US/Eastern")).strftime("%m/%d/%y %H:%M:%S")
+    )
+    return time.time()
+
+
+def start_timing():
+    return curr_time("Start: ")
+
+
+def end_timing():
+    return curr_time("End: ")
 
 
 def get_added_laplace_noise(global_sensitivty, epsilon):
@@ -407,25 +424,26 @@ def plot_err_runtime(query_func, epsilons, query_name):
 
 
 def main():
+    start_timing()
+    # plot_err_runtime(
+    #     student_scores_vs_learning, [10, 20, 30, 40, 50], "Student Score vs. Learning"
+    # )
+    # plot_err_runtime(
+    #     age_exam_performance, [0.2, 0.3, 0.4, 0.5, 1], "Age Exam Performance"
+    # )
     plot_err_runtime(
-        student_scores_vs_learning, [10, 20, 30, 40, 50], "Student Score vs. Learning"
+        region_exam_performance, [0.1, 0.3, 0.5, 0.7, 0.9], "Region Exam Performance"
     )
-    # plot_err_runtime(
-    #     age_exam_performance,
-    #     [5, 50],
-    # )
-    # plot_err_runtime(
-    #     region_exam_performance,
-    #     [5, 50],
-    # )
-    # plot_err_runtime(
-    #     region_learning,
-    #     [5, 50],
-    # )
+    plot_err_runtime(region_learning, [5, 10, 15, 20, 25], "Region Learning")
     # plot_err_runtime(
     #     perc_till_deadline,
     #     [5, 50],
+    #     "Assessment Performance Related To Deadline"
     # )
+
+    # TODO we probably want to call the query functions with the best
+    # epsilons at the end for our plots for the slides 
+    end_timing()
 
 
 if __name__ == "__main__":
