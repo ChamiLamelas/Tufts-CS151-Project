@@ -31,4 +31,4 @@ These are the results from [our data analysis presentation](https://docs.google.
 
 ### diff-private 
 
-These are the results from [our differential privacy implementation presentation](https://docs.google.com/presentation/d/1axnbwCHbVNAVCgJvgt6e1oITOcVR9URW3wLfygcIQ8A/edit?usp=sharing) in class.
+These are the results from [our differential privacy implementation presentation](https://docs.google.com/presentation/d/1n_1PAOA8kjh45x7iZpw9v_C55PKqzLrmKNaGEtIVG98/edit?usp=sharing) in class.
