@@ -425,12 +425,12 @@ def plot_err_runtime(query_func, epsilons, query_name):
 
 def main():
     start_timing()
-    # plot_err_runtime(
-    #     student_scores_vs_learning, [10, 20, 30, 40, 50], "Student Score vs. Learning"
-    # )
-    # plot_err_runtime(
-    #     age_exam_performance, [0.2, 0.3, 0.4, 0.5, 1], "Age Exam Performance"
-    # )
+    plot_err_runtime(
+        student_scores_vs_learning, [10, 20, 30, 40, 50], "Student Score vs. Learning"
+    )
+    plot_err_runtime(
+        age_exam_performance, [0.2, 0.3, 0.4, 0.5, 1], "Age Exam Performance"
+    )
     plot_err_runtime(
         region_exam_performance, [0.1, 0.3, 0.5, 0.7, 0.9], "Region Exam Performance"
     )
@@ -441,8 +441,14 @@ def main():
     #     "Assessment Performance Related To Deadline"
     # )
 
-    # TODO we probably want to call the query functions with the best
+    # we want to call the query functions with the best
     # epsilons at the end for our plots for the slides 
+    student_scores_vs_learning(0)
+    age_exam_performance(0)
+    region_exam_performance(0)
+    region_learning(0)
+    perc_till_deadline(0)
+
     end_timing()
 
 
