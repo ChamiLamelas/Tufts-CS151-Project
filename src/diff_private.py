@@ -69,9 +69,6 @@ def get_dp_mean(
     df[error_key] = df["gs"].apply(lambda x: (2 * (x / epsilon)) ** 2)
 
 
-# TODO add timing
-
-
 def student_scores_vs_learning(epsilon):
     ti = time.time()
 
@@ -435,19 +432,20 @@ def main():
         region_exam_performance, [0.1, 0.3, 0.5, 0.7, 0.9], "Region Exam Performance"
     )
     plot_err_runtime(region_learning, [5, 10, 15, 20, 25], "Region Learning")
-    # plot_err_runtime(
-    #     perc_till_deadline,
-    #     [5, 50],
-    #     "Assessment Performance Related To Deadline"
-    # )
+    plot_err_runtime(
+        perc_till_deadline,
+        [0.01, 0.02, 0.03, 0.05, 0.1],
+        "Assessment Performance Related To Deadline",
+    )
 
     # we want to call the query functions with the best
-    # epsilons at the end for our plots for the slides 
-    student_scores_vs_learning(0)
-    age_exam_performance(0)
-    region_exam_performance(0)
-    region_learning(0)
-    perc_till_deadline(0)
+    # epsilons at the end for our plots for the slides
+    # this will also print the errors 
+    print(student_scores_vs_learning(40)[0])
+    print(age_exam_performance(0.5)[0])
+    print(region_exam_performance(0.3)[0])
+    print(region_learning(10)[0])
+    print(perc_till_deadline(0.03)[0])
 
     end_timing()
 
