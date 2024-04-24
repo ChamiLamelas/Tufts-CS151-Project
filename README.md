@@ -14,6 +14,9 @@ All the code is in `src`.
 - `eda.py`: some preliminary exploratory data analysis (running it will produce the files in `results/eda`)
 - `scores.py`: preliminary analysis for our first presentation in class (on data analysis)
 - `diff_private.py`: implementation of our differentially private system plus analysis of it by adding noise to the 5 queries from our data analysis presentation. Note the percent till deadline plot is slightly modified in how it is presented to more easily add differential privacy (i.e. noise).
+- `side_channel.py`: implementation of our potential side channel attack as well as our fix plus analysis of it by comparing runtimes of
+the two strategies. Note the side channel attack we conceived was not
+one of our original queries, but the fix is.
 
 ## Results 
 
@@ -32,3 +35,7 @@ These are the results from [our data analysis presentation](https://docs.google.
 ### diff-private 
 
 These are the results from [our differential privacy implementation presentation](https://docs.google.com/presentation/d/1n_1PAOA8kjh45x7iZpw9v_C55PKqzLrmKNaGEtIVG98/edit?usp=sharing) in class.
+
+### side-channel 
+
+These are the results from [our side channel attack presentation](https://docs.google.com/presentation/d/1XSaSjwijittda3CL4leFTflyBl_h1I0EgT-l5YhncWQ/edit#slide=id.p) in class.
